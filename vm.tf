@@ -45,6 +45,12 @@ resource "azurerm_linux_virtual_machine" "app_connector" {
     disk_size_gb         = var.disk_size_gb
   }
 
+  plan {
+    name      = var.image_sku
+    publisher = var.image_publisher
+    product   = var.image_offer
+  }
+
   source_image_reference {
     publisher = var.image_publisher
     offer     = var.image_offer
