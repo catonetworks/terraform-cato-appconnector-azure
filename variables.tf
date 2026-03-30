@@ -34,18 +34,18 @@ variable "resource_group_name" {
   type        = string
 }
 
-variable "mgmt_nic_id" {
-  description = "The ID of the primary management network interface."
+variable "mgmt_nic_name" {
+  description = "Name of the primary management network interface."
   type        = string
 }
 
-variable "wan_nic_id" {
-  description = "The ID of the primary WAN network interface."
+variable "wan_nic_name" {
+  description = "Name of the primary WAN network interface."
   type        = string
 }
 
-variable "lan_nic_id" {
-  description = "The ID of the primary LAN network interface."
+variable "lan_nic_name" {
+  description = "Name of the primary LAN network interface."
   type        = string
 }
 
@@ -143,4 +143,11 @@ variable "app_connector_secondary_pop" {
   description = "Secondary POP location (state) for the AppConnector"
   type        = string
   default     = null
+}
+
+variable "commands" {
+  type = list(string)
+  default = [
+    "nohup /cato/socket/run_socket_daemon.sh &"
+  ]
 }
