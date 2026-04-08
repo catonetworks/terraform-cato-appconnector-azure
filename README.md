@@ -2,6 +2,8 @@
 
 The Cato appConnector module deploys an appConnector instance to connect to the Cato Cloud.
 
+- *Note: This feature is currently in Early Availability (EA) and has been rolled out to a limited set of customer accounts for testing and validation purposes.*
+
 # Pre-reqs
 - Install the [Azure Cloud CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli)
 - Run the following to configure the Azure CLI
