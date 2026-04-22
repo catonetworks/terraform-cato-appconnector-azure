@@ -166,17 +166,17 @@ module "app_conn" {
 ## Requirements
 
 | Name | Version |
-|------|---------|
+| ---- | ------- |
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.5 |
 | <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) | >= 4.31.0 |
-| <a name="requirement_cato"></a> [cato](#requirement\_cato) | >= 0.0.38 |
+| <a name="requirement_cato"></a> [cato](#requirement\_cato) | >= 0.0.70 |
 
 ## Providers
 
 | Name | Version |
-|------|---------|
+| ---- | ------- |
 | <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) | >= 4.31.0 |
-| <a name="provider_cato"></a> [cato](#provider\_cato) | >= 0.0.38 |
+| <a name="provider_cato"></a> [cato](#provider\_cato) | >= 0.0.70 |
 | <a name="provider_random"></a> [random](#provider\_random) | n/a |
 
 ## Modules
@@ -186,16 +186,20 @@ No modules.
 ## Resources
 
 | Name | Type |
-|------|------|
+| ---- | ---- |
 | [azurerm_linux_virtual_machine.app_connector](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/linux_virtual_machine) | resource |
+| [azurerm_virtual_machine_extension.app_connector_custom_script](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_extension) | resource |
 | [cato_app_connector.this](https://registry.terraform.io/providers/catonetworks/cato/latest/docs/resources/app_connector) | resource |
 | [random_string.app_connector_random_password](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/string) | resource |
 | [random_string.app_connector_random_username](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/string) | resource |
+| [azurerm_network_interface.lan](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/network_interface) | data source |
+| [azurerm_network_interface.mgmt](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/network_interface) | data source |
+| [azurerm_network_interface.wan](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/network_interface) | data source |
 
 ## Inputs
 
 | Name | Description | Type | Default | Required |
-|------|-------------|------|---------|:--------:|
+| ---- | ----------- | ---- | ------- | :------: |
 | <a name="input_app_connector_address"></a> [app\_connector\_address](#input\_app\_connector\_address) | AppConnector address (street) | `string` | `null` | no |
 | <a name="input_app_connector_city"></a> [app\_connector\_city](#input\_app\_connector\_city) | AppConnector city name (in the given country) | `string` | n/a | yes |
 | <a name="input_app_connector_country_code"></a> [app\_connector\_country\_code](#input\_app\_connector\_country\_code) | AppConnector country code | `string` | n/a | yes |
@@ -208,24 +212,25 @@ No modules.
 | <a name="input_app_connector_state_code"></a> [app\_connector\_state\_code](#input\_app\_connector\_state\_code) | AppConnector state code (required for the USA) | `string` | n/a | yes |
 | <a name="input_app_connector_timezone"></a> [app\_connector\_timezone](#input\_app\_connector\_timezone) | AppConnector timezone | `string` | n/a | yes |
 | <a name="input_app_connector_vm_name"></a> [app\_connector\_vm\_name](#input\_app\_connector\_vm\_name) | Azure Cato App Connector name | `string` | `"Cato-app-connector"` | no |
+| <a name="input_commands"></a> [commands](#input\_commands) | n/a | `list(string)` | <pre>[<br/>  "nohup /cato/socket/run_socket_daemon.sh &"<br/>]</pre> | no |
 | <a name="input_disk_size_gb"></a> [disk\_size\_gb](#input\_disk\_size\_gb) | Disk size in GB | `number` | `8` | no |
 | <a name="input_image_offer"></a> [image\_offer](#input\_image\_offer) | Specifies the offer of the image used to create the virtual machines. Changing this forces a new resource to be created. | `string` | `"cato_app_connector"` | no |
 | <a name="input_image_publisher"></a> [image\_publisher](#input\_image\_publisher) | Specifies the publisher of the image used to create the virtual machines. Changing this forces a new resource to be created. | `string` | `"catonetworks"` | no |
 | <a name="input_image_sku"></a> [image\_sku](#input\_image\_sku) | Specifies the SKU of the image used to create the virtual machines. Changing this forces a new resource to be created. | `string` | `"public-cato-app-connector"` | no |
 | <a name="input_image_version"></a> [image\_version](#input\_image\_version) | Specifies the version of the image used to create the virtual machines. Changing this forces a new resource to be created. | `string` | `"23.0.19605"` | no |
-| <a name="input_lan_nic_id"></a> [lan\_nic\_id](#input\_lan\_nic\_id) | The ID of the primary LAN network interface. | `string` | n/a | yes |
+| <a name="input_lan_nic_name"></a> [lan\_nic\_name](#input\_lan\_nic\_name) | Name of the primary LAN network interface. | `string` | n/a | yes |
 | <a name="input_location"></a> [location](#input\_location) | (Required) The Azure Region where the Resource Group should exist. Changing this forces a new Resource Group to be created. | `string` | n/a | yes |
-| <a name="input_mgmt_nic_id"></a> [mgmt\_nic\_id](#input\_mgmt\_nic\_id) | The ID of the primary management network interface. | `string` | n/a | yes |
+| <a name="input_mgmt_nic_name"></a> [mgmt\_nic\_name](#input\_mgmt\_nic\_name) | Name of the primary management network interface. | `string` | n/a | yes |
 | <a name="input_resource_group_name"></a> [resource\_group\_name](#input\_resource\_group\_name) | (Required) The Name which should be used for this Resource Group. Changing this forces a new Resource Group to be created. | `string` | n/a | yes |
 | <a name="input_storage_account_type"></a> [storage\_account\_type](#input\_storage\_account\_type) | Storage account type | `string` | `"Standard_LRS"` | no |
 | <a name="input_tags"></a> [tags](#input\_tags) | A Map of Keys and Values to Describe the infrastructure | `map(any)` | `null` | no |
 | <a name="input_vm_size"></a> [vm\_size](#input\_vm\_size) | (Required) Specifies the size of the Virtual Machine. See also Azure VM Naming Conventions. https://learn.microsoft.com/en-us/azure/virtual-machines/vm-naming-conventions | `string` | `"Standard_D8ls_v5"` | no |
-| <a name="input_wan_nic_id"></a> [wan\_nic\_id](#input\_wan\_nic\_id) | The ID of the primary WAN network interface. | `string` | n/a | yes |
+| <a name="input_wan_nic_name"></a> [wan\_nic\_name](#input\_wan\_nic\_name) | Name of the primary WAN network interface. | `string` | n/a | yes |
 
 ## Outputs
 
 | Name | Description |
-|------|-------------|
+| ---- | ----------- |
 | <a name="output_boot_disk_name"></a> [boot\_disk\_name](#output\_boot\_disk\_name) | Boot disk name for the VM |
 | <a name="output_cato_appconnector_id"></a> [cato\_appconnector\_id](#output\_cato\_appconnector\_id) | ID of the Cato AppConnector |
 | <a name="output_cato_appconnector_name"></a> [cato\_appconnector\_name](#output\_cato\_appconnector\_name) | Name of the Cato AppConnector |
@@ -239,3 +244,4 @@ No modules.
 | <a name="output_vm_public_ip_address"></a> [vm\_public\_ip\_address](#output\_vm\_public\_ip\_address) | Primary public IP address of the VM if assigned |
 | <a name="output_vm_size"></a> [vm\_size](#output\_vm\_size) | Size of the VM |
 | <a name="output_vm_tags"></a> [vm\_tags](#output\_vm\_tags) | Tags assigned to the VM |
+<!-- END_TF_DOCS -->
