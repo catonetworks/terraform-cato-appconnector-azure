@@ -102,6 +102,7 @@ variable "app_connector_description" {
   type        = string
   default     = null
 }
+
 variable "app_connector_group" {
   description = "AppConnector group name"
   type        = string

@@ -85,12 +85,21 @@ resource "azurerm_network_interface" "wan" {
     private_ip_address_allocation = "Static"
     private_ip_address            = var.wan_private_ip
     private_ip_address_version    = "IPv4"
+    public_ip_address_id          = azurerm_public_ip.wan.id
   }
 }
 
 
 resource "azurerm_public_ip" "mgmt" {
   name                = "mgmt"
+  location            = azurerm_resource_group.this.location
+  resource_group_name = azurerm_resource_group.this.name
+  allocation_method   = "Static"
+  sku                 = "Standard"
+}
+
+resource "azurerm_public_ip" "wan" {
+  name                = "wan"
   location            = azurerm_resource_group.this.location
   resource_group_name = azurerm_resource_group.this.name
   allocation_method   = "Static"
@@ -121,6 +130,12 @@ resource "azurerm_network_interface_security_group_association" "vm_nsg_assoc" {
   network_security_group_id = azurerm_network_security_group.vm_nsg.id
 }
 
+# Note: uncomment this resource if Azure complains about marketplace agreement 
+# resource "azurerm_marketplace_agreement" "cato-agreement" {
+#   publisher = "catonetworks"
+#   offer     = "catoappconnector"
+#   plan      = "appconnector"
+# } 
 ```
 </details>
 
@@ -140,8 +155,8 @@ module "app_conn" {
   app_connector_vm_name   = "app_connector_vm"
 
   image_publisher = "catonetworks"
-  image_offer     = "cato-app-connector"
-  image_sku       = "public-cato-app-connector"
+  image_offer     = "catoappconnector"
+  image_sku       = "appconnector"
   image_version   = "latest"
 
   tags = {
@@ -156,8 +171,14 @@ module "app_conn" {
   app_connector_country_code  = "US"
   app_connector_state_code    = "US-CA"
   app_connector_timezone      = "America/Los_Angeles"
-  app_connector_primary_pop   = "New York_Sta"
-  app_connector_secondary_pop = "Chicago Sta"
+  app_connector_primary_pop   = "New York"
+  app_connector_secondary_pop = "Chicago"
+
+  depends_on = [
+    azurerm_network_interface.mgmt,
+    azurerm_network_interface.lan,
+    azurerm_network_interface.wan,
+  ]
 }
 ```
 

@@ -13,6 +13,18 @@ data "azurerm_network_interface" "lan" {
   resource_group_name = var.resource_group_name
 }
 
+data "azurerm_network_interface" "wan-mac" {
+  name                = var.wan_nic_name
+  resource_group_name = var.resource_group_name
+  depends_on          = [azurerm_linux_virtual_machine.app_connector]
+}
+
+data "azurerm_network_interface" "lan-mac" {
+  name                = var.lan_nic_name
+  resource_group_name = var.resource_group_name
+  depends_on          = [azurerm_linux_virtual_machine.app_connector]
+}
+
 
 ## Create random strings for auth, as the app_connector does not allow auth but the instance requires it
 resource "random_string" "app_connector_random_username" {
@@ -98,7 +110,7 @@ resource "azurerm_virtual_machine_extension" "app_connector_custom_script" {
 
   settings   = <<SETTINGS
   {
-  "commandToExecute": "echo '{\"wan_ip\" : \"${data.azurerm_network_interface.wan.private_ip_address}\", \"wan_name\" : \"${data.azurerm_network_interface.wan.name}\", \"wan_nic_mac\" : \"${lower(replace(data.azurerm_network_interface.wan.mac_address, "-", ":"))}\", \"lan_ip\" : \"${data.azurerm_network_interface.lan.private_ip_address}\", \"lan_name\" : \"${data.azurerm_network_interface.lan.name}\", \"lan_nic_mac\" : \"${lower(replace(data.azurerm_network_interface.lan.mac_address, "-", ":"))}\"}' > /cato/nics_config.json; echo '${cato_app_connector.this.serial_number}' > /cato/serial.txt;${join(";", var.commands)}"
+  "commandToExecute": "echo '{\"wan_ip\" : \"${data.azurerm_network_interface.wan.private_ip_address}\", \"wan_name\" : \"${data.azurerm_network_interface.wan.name}\", \"wan_nic_mac\" : \"${lower(replace(data.azurerm_network_interface.wan-mac.mac_address, "-", ":"))}\", \"lan_ip\" : \"${data.azurerm_network_interface.lan.private_ip_address}\", \"lan_name\" : \"${data.azurerm_network_interface.lan.name}\", \"lan_nic_mac\" : \"${lower(replace(data.azurerm_network_interface.lan-mac.mac_address, "-", ":"))}\"}' > /cato/nics_config.json; echo '${cato_app_connector.this.serial_number}' > /cato/serial.txt;${join(";", var.commands)}"
   }
   SETTINGS
   depends_on = [data.azurerm_network_interface.lan, data.azurerm_network_interface.wan, data.azurerm_network_interface.mgmt]
