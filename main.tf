@@ -8,14 +8,7 @@ resource "cato_app_connector" "this" {
   name        = var.app_connector_name
   description = var.app_connector_description
   group_name  = var.app_connector_group
-
-  location = {
-    address      = var.app_connector_address
-    city_name    = var.app_connector_city
-    country_code = var.app_connector_country_code
-    state_code   = var.app_connector_state_code
-    timezone     = var.app_connector_timezone
-  }
+  location    = local.cur_site_location
   preferred_pop_location = {
     automatic      = false
     preferred_only = true

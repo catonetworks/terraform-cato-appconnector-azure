@@ -166,11 +166,6 @@ module "app_conn" {
   app_connector_name          = "appcon-site1-azure"
   app_connector_description   = "make site1-azure app accessible"
   app_connector_group         = "site1-azure"
-  app_connector_address       = "123 Main St"
-  app_connector_city          = "San Francisco"
-  app_connector_country_code  = "US"
-  app_connector_state_code    = "US-CA"
-  app_connector_timezone      = "America/Los_Angeles"
   app_connector_primary_pop   = "New York"
   app_connector_secondary_pop = "Chicago"
 
@@ -187,7 +182,7 @@ module "app_conn" {
 ## Requirements
 
 | Name | Version |
-| ---- | ------- |
+|------|---------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.5 |
 | <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) | >= 4.71.0 |
 | <a name="requirement_cato"></a> [cato](#requirement\_cato) | >= 0.0.70 |
@@ -195,7 +190,7 @@ module "app_conn" {
 ## Providers
 
 | Name | Version |
-| ---- | ------- |
+|------|---------|
 | <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) | >= 4.71.0 |
 | <a name="provider_cato"></a> [cato](#provider\_cato) | >= 0.0.70 |
 | <a name="provider_random"></a> [random](#provider\_random) | n/a |
@@ -207,31 +202,28 @@ No modules.
 ## Resources
 
 | Name | Type |
-| ---- | ---- |
+|------|------|
 | [azurerm_linux_virtual_machine.app_connector](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/linux_virtual_machine) | resource |
 | [azurerm_virtual_machine_extension.app_connector_custom_script](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_extension) | resource |
 | [cato_app_connector.this](https://registry.terraform.io/providers/catonetworks/cato/latest/docs/resources/app_connector) | resource |
 | [random_string.app_connector_random_password](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/string) | resource |
 | [random_string.app_connector_random_username](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/string) | resource |
 | [azurerm_network_interface.lan](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/network_interface) | data source |
+| [azurerm_network_interface.lan-mac](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/network_interface) | data source |
 | [azurerm_network_interface.mgmt](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/network_interface) | data source |
 | [azurerm_network_interface.wan](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/network_interface) | data source |
+| [azurerm_network_interface.wan-mac](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/network_interface) | data source |
 
 ## Inputs
 
 | Name | Description | Type | Default | Required |
-| ---- | ----------- | ---- | ------- | :------: |
-| <a name="input_app_connector_address"></a> [app\_connector\_address](#input\_app\_connector\_address) | AppConnector address (street) | `string` | `null` | no |
-| <a name="input_app_connector_city"></a> [app\_connector\_city](#input\_app\_connector\_city) | AppConnector city name (in the given country) | `string` | n/a | yes |
-| <a name="input_app_connector_country_code"></a> [app\_connector\_country\_code](#input\_app\_connector\_country\_code) | AppConnector country code | `string` | n/a | yes |
+|------|-------------|------|---------|:--------:|
 | <a name="input_app_connector_description"></a> [app\_connector\_description](#input\_app\_connector\_description) | AppConnector description | `string` | `null` | no |
 | <a name="input_app_connector_disk_name"></a> [app\_connector\_disk\_name](#input\_app\_connector\_disk\_name) | Cato App Connector Disk name | `string` | `"Cato-app-connector-disk"` | no |
 | <a name="input_app_connector_group"></a> [app\_connector\_group](#input\_app\_connector\_group) | AppConnector group name | `string` | n/a | yes |
 | <a name="input_app_connector_name"></a> [app\_connector\_name](#input\_app\_connector\_name) | Name of the app-connector virtual machine | `string` | `"app-connector"` | no |
 | <a name="input_app_connector_primary_pop"></a> [app\_connector\_primary\_pop](#input\_app\_connector\_primary\_pop) | Primary POP location (state) for the AppConnector | `string` | `null` | no |
 | <a name="input_app_connector_secondary_pop"></a> [app\_connector\_secondary\_pop](#input\_app\_connector\_secondary\_pop) | Secondary POP location (state) for the AppConnector | `string` | `null` | no |
-| <a name="input_app_connector_state_code"></a> [app\_connector\_state\_code](#input\_app\_connector\_state\_code) | AppConnector state code (required for the USA) | `string` | n/a | yes |
-| <a name="input_app_connector_timezone"></a> [app\_connector\_timezone](#input\_app\_connector\_timezone) | AppConnector timezone | `string` | n/a | yes |
 | <a name="input_app_connector_vm_name"></a> [app\_connector\_vm\_name](#input\_app\_connector\_vm\_name) | Azure Cato App Connector name | `string` | `"Cato-app-connector"` | no |
 | <a name="input_commands"></a> [commands](#input\_commands) | n/a | `list(string)` | <pre>[<br/>  "nohup /cato/socket/run_socket_daemon.sh &"<br/>]</pre> | no |
 | <a name="input_disk_size_gb"></a> [disk\_size\_gb](#input\_disk\_size\_gb) | Disk size in GB | `number` | `8` | no |
@@ -243,6 +235,7 @@ No modules.
 | <a name="input_location"></a> [location](#input\_location) | (Required) The Azure Region where the Resource Group should exist. Changing this forces a new Resource Group to be created. | `string` | n/a | yes |
 | <a name="input_mgmt_nic_name"></a> [mgmt\_nic\_name](#input\_mgmt\_nic\_name) | Name of the primary management network interface. | `string` | n/a | yes |
 | <a name="input_resource_group_name"></a> [resource\_group\_name](#input\_resource\_group\_name) | (Required) The Name which should be used for this Resource Group. Changing this forces a new Resource Group to be created. | `string` | n/a | yes |
+| <a name="input_site_location"></a> [site\_location](#input\_site\_location) | Site location which is used by the Cato Socket to connect to the closest Cato PoP. If not specified, the location will be derived from the Azure region dynamicaly. | <pre>object({<br/>    city_name    = string<br/>    country_code = string<br/>    state_code   = string<br/>    timezone     = string<br/>  })</pre> | <pre>{<br/>  "city_name": null,<br/>  "country_code": null,<br/>  "state_code": null,<br/>  "timezone": null<br/>}</pre> | no |
 | <a name="input_storage_account_type"></a> [storage\_account\_type](#input\_storage\_account\_type) | Storage account type | `string` | `"Standard_LRS"` | no |
 | <a name="input_tags"></a> [tags](#input\_tags) | A Map of Keys and Values to Describe the infrastructure | `map(any)` | `null` | no |
 | <a name="input_vm_size"></a> [vm\_size](#input\_vm\_size) | (Required) Specifies the size of the Virtual Machine. See also Azure VM Naming Conventions. https://learn.microsoft.com/en-us/azure/virtual-machines/vm-naming-conventions | `string` | `"Standard_D8ls_v5"` | no |
@@ -251,11 +244,12 @@ No modules.
 ## Outputs
 
 | Name | Description |
-| ---- | ----------- |
+|------|-------------|
 | <a name="output_boot_disk_name"></a> [boot\_disk\_name](#output\_boot\_disk\_name) | Boot disk name for the VM |
 | <a name="output_cato_appconnector_id"></a> [cato\_appconnector\_id](#output\_cato\_appconnector\_id) | ID of the Cato AppConnector |
 | <a name="output_cato_appconnector_name"></a> [cato\_appconnector\_name](#output\_cato\_appconnector\_name) | Name of the Cato AppConnector |
 | <a name="output_cato_serial_id"></a> [cato\_serial\_id](#output\_cato\_serial\_id) | Serial ID of the Cato AppConnector |
+| <a name="output_site_location"></a> [site\_location](#output\_site\_location) | The resolved site location from Azure region mapping |
 | <a name="output_vm_instance_id"></a> [vm\_instance\_id](#output\_vm\_instance\_id) | ID of the VM instance |
 | <a name="output_vm_instance_name"></a> [vm\_instance\_name](#output\_vm\_instance\_name) | Name of the VM instance |
 | <a name="output_vm_location"></a> [vm\_location](#output\_vm\_location) | Azure region of the VM |
