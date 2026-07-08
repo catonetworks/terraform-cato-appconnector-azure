@@ -148,9 +148,9 @@ module "app_conn" {
   vm_size                 = "Standard_D8ls_v5"
   disk_size_gb            = 30
   resource_group_name     = azurerm_resource_group.this.name
-  mgmt_nic_id             = azurerm_network_interface.mgmt.id
-  wan_nic_id              = azurerm_network_interface.wan.id
-  lan_nic_id              = azurerm_network_interface.lan.id
+  mgmt_nic_name           = azurerm_network_interface.mgmt.id
+  wan_nic_name            = azurerm_network_interface.wan.id
+  lan_nic_name            = azurerm_network_interface.lan.id
   app_connector_disk_name = "app_connector_disk"
   app_connector_vm_name   = "app_connector_vm"
 
