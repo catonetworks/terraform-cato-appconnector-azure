@@ -1,86 +1,114 @@
+
+data "cato_siteLocation" "site_location" {
+  count = local.all_location_fields_null ? 1 : 0
+  filters = concat([
+    {
+      field     = "city"
+      operation = "exact"
+      search    = local.region_to_location[local.locationstr].city
+    },
+    {
+      field     = "country_name"
+      operation = "exact"
+      search    = local.region_to_location[local.locationstr].country
+    }
+    ],
+    local.region_to_location[local.locationstr].state != null ? [
+      {
+        field     = "state_name"
+        operation = "exact"
+        search    = local.region_to_location[local.locationstr].state
+      }
+  ] : [])
+}
+
 locals {
-  # Check if user provided site_location (any field is non-null)
-  use_user_location = (
-    var.site_location.city_name != null ||
-    var.site_location.country_code != null ||
-    var.site_location.state_code != null ||
-    var.site_location.timezone != null
-  )
+  ## Check for all site_location inputs to be null
+  all_location_fields_null = (
+    var.site_location.city_name == null &&
+    var.site_location.country_code == null &&
+    var.site_location.state_code == null &&
+    var.site_location.timezone == null
+  ) ? true : false
+
+  ## If all site_location fields are null, use the data source to fetch the
+  ## site_location from azure provider location, else use var.site_location
+  cur_site_location = local.all_location_fields_null ? {
+    city_name    = data.cato_siteLocation.site_location[0].locations[0].city
+    country_code = data.cato_siteLocation.site_location[0].locations[0].country_code
+    state_code   = data.cato_siteLocation.site_location[0].locations[0].state_code
+    timezone     = data.cato_siteLocation.site_location[0].locations[0].timezone[0]
+  } : var.site_location
 
   locationstr = lower(replace(var.location, " ", ""))
 
   # Manual mapping of Azure regions to their cities and countries
   # Since Azure doesn't provide city/country in the API, we create our own mapping
-  # Note: Only US, AU, IN, BR state codes work - all others must be null
-  region_to_site_location = {
+  region_to_location = {
     # North America - United States
-    "eastus"         = { city_name = "Ashburn", country_code = "US", state_code = "US-VA", timezone = "America/New_York" }
-    "eastus2"        = { city_name = "Ashburn", country_code = "US", state_code = "US-VA", timezone = "America/New_York" }
-    "centralus"      = { city_name = "Des Moines", country_code = "US", state_code = "US-IA", timezone = "America/Chicago" }
-    "northcentralus" = { city_name = "Chicago", country_code = "US", state_code = "US-IL", timezone = "America/Chicago" }
-    "southcentralus" = { city_name = "San Antonio", country_code = "US", state_code = "US-TX", timezone = "America/Chicago" }
-    "westcentralus"  = { city_name = "Cheyenne", country_code = "US", state_code = "US-WY", timezone = "America/Denver" }
-    "westus"         = { city_name = "San Francisco", country_code = "US", state_code = "US-CA", timezone = "America/Los_Angeles" }
-    "westus2"        = { city_name = "Seattle", country_code = "US", state_code = "US-WA", timezone = "America/Los_Angeles" }
-    "westus3"        = { city_name = "Phoenix", country_code = "US", state_code = "US-AZ", timezone = "America/Phoenix" }
+    "eastus"         = { city = "Ashburn", state = "Virginia", country = "United States" }
+    "eastus2"        = { city = "Ashburn", state = "Virginia", country = "United States" }
+    "centralus"      = { city = "Des Moines", state = "Iowa", country = "United States" }
+    "northcentralus" = { city = "Chicago", state = "Illinois", country = "United States" }
+    "southcentralus" = { city = "San Antonio", state = "Texas", country = "United States" }
+    "westcentralus"  = { city = "Cheyenne", state = "Wyoming", country = "United States" }
+    "westus"         = { city = "San Francisco", state = "California", country = "United States" }
+    "westus2"        = { city = "Seattle", state = "Washington", country = "United States" }
+    "westus3"        = { city = "Phoenix", state = "Arizona", country = "United States" }
 
     # North America - Canada
-    "canadacentral" = { city_name = "Toronto", country_code = "CA", state_code = null, timezone = "America/Toronto" }
-    "canadaeast"    = { city_name = "Montréal", country_code = "CA", state_code = null, timezone = "America/Toronto" }
+    "canadacentral" = { city = "Toronto", state = null, country = "Canada" }
+    "canadaeast"    = { city = "Montréal", state = null, country = "Canada" }
 
     # Europe
-    "northeurope"        = { city_name = "Dublin", country_code = "IE", state_code = null, timezone = "Europe/Dublin" }
-    "westeurope"         = { city_name = "Brussels", country_code = "BE", state_code = null, timezone = "Europe/Brussels" }
-    "francecentral"      = { city_name = "Paris", country_code = "FR", state_code = null, timezone = "Europe/Paris" }
-    "francesouth"        = { city_name = "Marseille", country_code = "FR", state_code = null, timezone = "Europe/Paris" }
-    "germanywestcentral" = { city_name = "Frankfurt am Main", country_code = "DE", state_code = null, timezone = "Europe/Berlin" }
-    "germanynorth"       = { city_name = "Berlin", country_code = "DE", state_code = null, timezone = "Europe/Berlin" }
-    "norwayeast"         = { city_name = "Oslo", country_code = "NO", state_code = null, timezone = "Europe/Oslo" }
-    "norwaywest"         = { city_name = "Oslo", country_code = "NO", state_code = null, timezone = "Europe/Oslo" }
-    "swedencentral"      = { city_name = "Stockholm", country_code = "SE", state_code = null, timezone = "Europe/Stockholm" }
-    "switzerlandnorth"   = { city_name = "Zürich", country_code = "CH", state_code = null, timezone = "Europe/Zurich" }
-    "switzerlandwest"    = { city_name = "Genève", country_code = "CH", state_code = null, timezone = "Europe/Zurich" }
-    "uksouth"            = { city_name = "London", country_code = "GB", state_code = null, timezone = "Europe/London" }
-    "ukwest"             = { city_name = "Cardiff", country_code = "GB", state_code = null, timezone = "Europe/London" }
-    "polandcentral"      = { city_name = "Warsaw", country_code = "PL", state_code = null, timezone = "Europe/Warsaw" }
+    "northeurope"        = { city = "Dublin", state = null, country = "Ireland" }
+    "westeurope"         = { city = "Amsterdam", state = null, country = "Netherlands" }
+    "francecentral"      = { city = "Paris", state = null, country = "France" }
+    "francesouth"        = { city = "Marseille", state = null, country = "France" }
+    "germanywestcentral" = { city = "Frankfurt (Oder)", state = null, country = "Germany" }
+    "germanynorth"       = { city = "Berlin", state = null, country = "Germany" }
+    "norwayeast"         = { city = "Oslo", state = null, country = "Norway" }
+    "norwaywest"         = { city = "Stavanger", state = null, country = "Norway" }
+    "swedencentral"      = { city = "Gävle", state = null, country = "Sweden" }
+    "switzerlandnorth"   = { city = "Zürich", state = null, country = "Switzerland" }
+    "switzerlandwest"    = { city = "Genève", state = null, country = "Switzerland" }
+    "uksouth"            = { city = "London", state = null, country = "United Kingdom" }
+    "ukwest"             = { city = "Cardiff", state = null, country = "United Kingdom" }
 
     # Asia Pacific
-    "eastasia"        = { city_name = "Hong Kong", country_code = "HK", state_code = null, timezone = "Asia/Hong_Kong" }
-    "southeastasia"   = { city_name = "Singapore", country_code = "SG", state_code = null, timezone = "Asia/Singapore" }
-    "centralindia"    = { city_name = "Pune", country_code = "IN", state_code = "IN-MH", timezone = "Asia/Kolkata" }
-    "southindia"      = { city_name = "Chennai", country_code = "IN", state_code = "IN-TN", timezone = "Asia/Kolkata" }
-    "westindia"       = { city_name = "Mumbai", country_code = "IN", state_code = "IN-MH", timezone = "Asia/Kolkata" }
-    "jioindiacentral" = { city_name = "Jamnagar", country_code = "IN", state_code = "IN-GJ", timezone = "Asia/Kolkata" }
-    "jioindiawest"    = { city_name = "Jamnagar", country_code = "IN", state_code = "IN-GJ", timezone = "Asia/Kolkata" }
-    "japaneast"       = { city_name = "Tokyo", country_code = "JP", state_code = null, timezone = "Asia/Tokyo" }
-    "japanwest"       = { city_name = "Osaka", country_code = "JP", state_code = null, timezone = "Asia/Tokyo" }
-    "koreacentral"    = { city_name = "Seoul", country_code = "KR", state_code = null, timezone = "Asia/Seoul" }
-    "koreasouth"      = { city_name = "Busan", country_code = "KR", state_code = null, timezone = "Asia/Seoul" }
+    "eastasia"        = { city = "Hong Kong", state = null, country = "Hong Kong" }
+    "southeastasia"   = { city = "Singapore", state = null, country = "Singapore" }
+    "centralindia"    = { city = "Pune", state = "Maharashtra", country = "India" }
+    "southindia"      = { city = "Chennai", state = "Tamil Nadu", country = "India" }
+    "westindia"       = { city = "Mumbai", state = "Maharashtra", country = "India" }
+    "jioindiacentral" = { city = "Jamnagar", state = "Gujarat", country = "India" }
+    "jioindiawest"    = { city = "Jamnagar", state = "Gujarat", country = "India" }
+    "japaneast"       = { city = "Tokyo", state = null, country = "Japan" }
+    "japanwest"       = { city = "Osaka", state = null, country = "Japan" }
+    "koreacentral"    = { city = "Seoul", state = null, country = "South Korea" }
+    "koreasouth"      = { city = "Busan", state = null, country = "South Korea" }
 
     # Asia Pacific - Australia
-    "australiaeast"      = { city_name = "Sydney", country_code = "AU", state_code = "AU-NSW", timezone = "Australia/Sydney" }
-    "australiacentral"   = { city_name = "Canberra", country_code = "AU", state_code = "AU-ACT", timezone = "Australia/Sydney" }
-    "australiacentral2"  = { city_name = "Canberra", country_code = "AU", state_code = "AU-ACT", timezone = "Australia/Sydney" }
-    "australiasoutheast" = { city_name = "Melbourne", country_code = "AU", state_code = "AU-VIC", timezone = "Australia/Melbourne" }
+    "australiaeast"      = { city = "Sydney", state = "New South Wales", country = "Australia" }
+    "australiacentral"   = { city = "Canberra", state = "Australian Capital Territory", country = "Australia" }
+    "australiacentral2"  = { city = "Canberra", state = "Australian Capital Territory", country = "Australia" }
+    "australiasoutheast" = { city = "Melbourne", state = "Victoria", country = "Australia" }
 
     # Middle East
-    "uaenorth"     = { city_name = "Dubai", country_code = "AE", state_code = null, timezone = "Asia/Dubai" }
-    "uaecentral"   = { city_name = "Abu Dhabi", country_code = "AE", state_code = null, timezone = "Asia/Dubai" }
-    "qatarcentral" = { city_name = "Doha", country_code = "QA", state_code = null, timezone = "Asia/Qatar" }
+    "uaenorth"     = { city = "Dubai", state = null, country = "United Arab Emirates" }
+    "uaecentral"   = { city = "Abu Dhabi", state = null, country = "United Arab Emirates" }
+    "qatarcentral" = { city = "Doha", state = null, country = "Qatar" }
 
     # Africa
-    "southafricanorth" = { city_name = "Johannesburg", country_code = "ZA", state_code = null, timezone = "Africa/Johannesburg" }
-    "southafricawest"  = { city_name = "Cape Town", country_code = "ZA", state_code = null, timezone = "Africa/Johannesburg" }
+    "southafricanorth" = { city = "Johannesburg", state = null, country = "South Africa" }
+    "southafricawest"  = { city = "Cape Town", state = null, country = "South Africa" }
 
     # South America
-    "brazilsouth" = { city_name = "São Paulo", country_code = "BR", state_code = "BR-SP", timezone = "UTC-3" }
+    "brazilsouth" = { city = "São Paulo", state = "São Paulo", country = "Brazil" }
   }
-
-  # Use user-provided location if any field is set, otherwise use hardcoded mapping
-  cur_site_location = local.use_user_location ? var.site_location : local.region_to_site_location[local.locationstr]
 }
 
 output "site_location" {
   description = "The resolved site location from Azure region mapping"
-  value       = local.cur_site_location
+  value       = data.cato_siteLocation.site_location
 }

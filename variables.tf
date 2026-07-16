@@ -1,7 +1,77 @@
+## Azure Variables
+
 variable "location" {
   description = "(Required) The Azure Region where the Resource Group should exist. Changing this forces a new Resource Group to be created."
   type        = string
 }
+
+variable "prefix" {
+  description = "Name prefix applied to all created resources."
+  type        = string
+  default     = "cato-appconn"
+}
+
+variable "resource_group_name" {
+  description = "Azure resource group name. If null, a new resource group will be created."
+  type        = string
+  default     = null
+}
+
+variable "tags" {
+  description = "A Map of Keys and Values to Describe the infrastructure"
+  type        = map(any)
+  default     = null
+}
+
+## Networking Variables
+
+variable "vnet_cidr" {
+  description = "Address space for the VNet created by this module."
+  type        = string
+  default     = "10.20.0.0/16"
+}
+
+variable "mgmt_subnet_cidr" {
+  description = "CIDR for the management subnet."
+  type        = string
+  default     = "10.20.0.0/24"
+}
+
+variable "wan_subnet_cidr" {
+  description = "CIDR for the WAN subnet (egress to Cato PoP)."
+  type        = string
+  default     = "10.20.1.0/24"
+}
+
+variable "lan_subnet_cidr" {
+  description = "CIDR for the LAN subnet (faces the protected application network)."
+  type        = string
+  default     = "10.20.2.0/24"
+}
+
+variable "ssh_allowed_cidr" {
+  description = "Optional source CIDR allowed to SSH to the mgmt NIC for troubleshooting. Null disables the inbound SSH rule."
+  type        = string
+  default     = null
+}
+
+variable "sg_rules" {
+  description = "Security rules for the Network Security Group"
+  type = list(object({
+    name                       = string
+    priority                   = number
+    direction                  = string
+    access                     = string
+    protocol                   = string
+    source_port_range          = string
+    destination_port_range     = string
+    source_address_prefix      = string
+    destination_address_prefix = string
+  }))
+  default = []
+}
+
+## VM Variables
 
 variable "vm_size" {
   description = "(Required) Specifies the size of the Virtual Machine. See also Azure VM Naming Conventions. https://learn.microsoft.com/en-us/azure/virtual-machines/vm-naming-conventions"
@@ -29,24 +99,44 @@ variable "storage_account_type" {
   }
 }
 
-variable "resource_group_name" {
-  description = "(Required) The Name which should be used for this Resource Group. Changing this forces a new Resource Group to be created."
+## Marketplace Image Variables
+
+variable "image_publisher" {
+  description = "Specifies the publisher of the image used to create the virtual machines. Changing this forces a new resource to be created."
   type        = string
+  default     = "catonetworks"
 }
 
-variable "mgmt_nic_name" {
-  description = "Name of the primary management network interface."
+variable "image_offer" {
+  description = "Specifies the offer of the image used to create the virtual machines. Changing this forces a new resource to be created."
   type        = string
+  default     = "catoappconnector"
 }
 
-variable "wan_nic_name" {
-  description = "Name of the primary WAN network interface."
+variable "image_sku" {
+  description = "Specifies the SKU of the image used to create the virtual machines. Changing this forces a new resource to be created."
   type        = string
+  default     = "appconnector"
 }
 
-variable "lan_nic_name" {
-  description = "Name of the primary LAN network interface."
+variable "image_version" {
+  description = "Specifies the version of the image used to create the virtual machines. Changing this forces a new resource to be created."
   type        = string
+  default     = "23.0.19605"
+}
+
+variable "accept_marketplace_terms" {
+  description = "Whether Terraform should accept the Cato marketplace image terms. Set to false if the terms are already accepted on this subscription."
+  type        = bool
+  default     = true
+}
+
+## App Connector Variables
+
+variable "app_connector_name" {
+  type        = string
+  description = "Name of the app-connector virtual machine"
+  default     = "app-connector"
 }
 
 variable "app_connector_disk_name" {
@@ -59,42 +149,6 @@ variable "app_connector_vm_name" {
   description = "Azure Cato App Connector name"
   type        = string
   default     = "Cato-app-connector"
-}
-
-variable "tags" {
-  description = "A Map of Keys and Values to Describe the infrastructure"
-  type        = map(any)
-  default     = null
-}
-
-variable "image_publisher" {
-  description = "Specifies the publisher of the image used to create the virtual machines. Changing this forces a new resource to be created."
-  type        = string
-  default     = "catonetworks"
-}
-
-variable "image_offer" {
-  description = "Specifies the offer of the image used to create the virtual machines. Changing this forces a new resource to be created."
-  type        = string
-  default     = "cato_app_connector"
-}
-
-variable "image_sku" {
-  description = "Specifies the SKU of the image used to create the virtual machines. Changing this forces a new resource to be created."
-  type        = string
-  default     = "public-cato-app-connector"
-}
-
-variable "image_version" {
-  description = "Specifies the version of the image used to create the virtual machines. Changing this forces a new resource to be created."
-  type        = string
-  default     = "23.0.19605"
-}
-
-variable "app_connector_name" {
-  type        = string
-  description = "Name of the app-connector virtual machine"
-  default     = "app-connector"
 }
 
 variable "app_connector_description" {
@@ -128,7 +182,7 @@ variable "commands" {
 }
 
 variable "site_location" {
-  description = "Site location which is used by the Cato Socket to connect to the closest Cato PoP. If not specified, the location will be derived from the Azure region dynamicaly."
+  description = "Site location which is used by the Cato App Connector to connect to the closest Cato PoP. If not specified, the location will be derived from the Azure region dynamically."
   type = object({
     city_name    = string
     country_code = string
