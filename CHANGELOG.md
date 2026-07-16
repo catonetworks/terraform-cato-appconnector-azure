@@ -1,6 +1,11 @@
 # Changelog
 
-## 0.0.2 (2026-07-16)
+## 0.0.5 (2026-07-16)
+
+### Features
+- Conditional VNet creation — use existing when `vnet_name` is provided, create new when null
+
+## 0.0.4 (2026-07-16)
 
 ### Features
 - Embedded all Azure networking resources into the module (VNet, subnets, NSG, NICs, public IP, marketplace agreement)

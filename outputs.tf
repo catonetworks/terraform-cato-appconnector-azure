@@ -9,7 +9,7 @@ output "resource_group_name" {
 
 output "azurerm_virtual_network_id" {
   description = "ID of the virtual network."
-  value       = azurerm_virtual_network.this.id
+  value       = var.vnet_name == null ? azurerm_virtual_network.this[0].id : null
 }
 
 output "wan_public_ip" {
@@ -49,7 +49,7 @@ output "wan_subnet_id" {
 
 output "lan_subnet_id" {
   description = "ID of the LAN subnet."
-  value       = azurerm_subnet.lan.id
+  value       = local.effective_lan_subnet_id
 }
 
 output "nsg_id" {

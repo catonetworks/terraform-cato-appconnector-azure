@@ -3,8 +3,10 @@
 ###############################################################################
 
 locals {
-  clean_ac_name     = regex("^[a-z][-a-z0-9]{0,61}[a-z0-9]?$", replace(lower(var.app_connector_name), "_", "-"))
-  effective_rg_name = var.resource_group_name == null ? azurerm_resource_group.this[0].name : var.resource_group_name
+  clean_ac_name           = regex("^[a-z][-a-z0-9]{0,61}[a-z0-9]?$", replace(lower(var.app_connector_name), "_", "-"))
+  effective_rg_name       = var.resource_group_name == null ? azurerm_resource_group.this[0].name : var.resource_group_name
+  effective_vnet_name     = var.vnet_name == null ? azurerm_virtual_network.this[0].name : var.vnet_name
+  effective_lan_subnet_id = var.lan_subnet_id == null ? azurerm_subnet.lan[0].id : var.lan_subnet_id
 }
 
 ###############################################################################
@@ -23,6 +25,7 @@ resource "azurerm_resource_group" "this" {
 ###############################################################################
 
 resource "azurerm_virtual_network" "this" {
+  count               = var.vnet_name == null ? 1 : 0
   name                = "${var.prefix}-vnet"
   location            = var.location
   resource_group_name = local.effective_rg_name
@@ -34,7 +37,7 @@ resource "azurerm_virtual_network" "this" {
 resource "azurerm_subnet" "mgmt" {
   name                 = "${var.prefix}-mgmt-subnet"
   resource_group_name  = local.effective_rg_name
-  virtual_network_name = azurerm_virtual_network.this.name
+  virtual_network_name = local.effective_vnet_name
   address_prefixes     = [var.mgmt_subnet_cidr]
   depends_on           = [azurerm_virtual_network.this]
 }
@@ -42,15 +45,16 @@ resource "azurerm_subnet" "mgmt" {
 resource "azurerm_subnet" "wan" {
   name                 = "${var.prefix}-wan-subnet"
   resource_group_name  = local.effective_rg_name
-  virtual_network_name = azurerm_virtual_network.this.name
+  virtual_network_name = local.effective_vnet_name
   address_prefixes     = [var.wan_subnet_cidr]
   depends_on           = [azurerm_virtual_network.this]
 }
 
 resource "azurerm_subnet" "lan" {
+  count                = var.lan_subnet_id == null ? 1 : 0
   name                 = "${var.prefix}-lan-subnet"
   resource_group_name  = local.effective_rg_name
-  virtual_network_name = azurerm_virtual_network.this.name
+  virtual_network_name = local.effective_vnet_name
   address_prefixes     = [var.lan_subnet_cidr]
   depends_on           = [azurerm_virtual_network.this]
 }
@@ -109,7 +113,8 @@ resource "azurerm_subnet_network_security_group_association" "wan" {
 }
 
 resource "azurerm_subnet_network_security_group_association" "lan" {
-  subnet_id                 = azurerm_subnet.lan.id
+  count                     = var.lan_subnet_id == null ? 1 : 0
+  subnet_id                 = azurerm_subnet.lan[0].id
   network_security_group_id = azurerm_network_security_group.this.id
 }
 
@@ -171,11 +176,9 @@ resource "azurerm_network_interface" "lan" {
 
   ip_configuration {
     name                          = "primary"
-    subnet_id                     = azurerm_subnet.lan.id
+    subnet_id                     = local.effective_lan_subnet_id
     private_ip_address_allocation = "Dynamic"
   }
-
-  depends_on = [azurerm_subnet.lan]
 }
 
 ###############################################################################

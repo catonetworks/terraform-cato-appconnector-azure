@@ -2,7 +2,19 @@
 
 This module deploys a Cato Networks App Connector on Azure with all required networking infrastructure embedded. The module creates the VNet, subnets, NSG, NICs, public IP, and the App Connector VM — no external resource creation needed.
 
-The design follows the same pattern as the `catonetworks/vsocket-azure-vnet/cato` module: resources are created natively within the module, with conditional logic to create a new resource group or use an existing one.
+The design follows the same pattern as the `catonetworks/vsocket-azure-vnet/cato` module: resources are created natively within the module, with conditional logic to create new resources or use existing ones.
+
+### Conditional Resource Creation
+
+The module supports a "bring your own" pattern for key resources. When a parameter is set to `null` (the default), the module creates the resource. When a value is provided, it uses the existing resource instead.
+
+| Parameter | Null (default) | Provided |
+|-----------|---------------|----------|
+| `resource_group_name` | Creates a new resource group | Uses the existing resource group |
+| `vnet_name` | Creates a new VNet | Deploys subnets into the existing VNet |
+| `lan_subnet_id` | Creates a new LAN subnet | Places the LAN NIC on the existing subnet |
+
+This enables flexible deployment — from fully greenfield (everything created) to brownfield (deploy into existing infrastructure alongside vSockets or other workloads).
 
 - *Note: This feature is currently in Early Availability (EA) and has been rolled out to a limited set of customer accounts for testing and validation purposes.*
 
@@ -11,6 +23,10 @@ The design follows the same pattern as the `catonetworks/vsocket-azure-vnet/cato
 - Install the [Azure Cloud CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli)
 - Run `az login` to configure the Azure CLI
 - A Cato Networks account with API access
+- Accept the Cato App Connector marketplace terms on your subscription:
+  ```bash
+  az vm image terms accept --publisher catonetworks --offer catoappconnector --plan appconnector
+  ```
 
 ## Usage
 
@@ -81,21 +97,88 @@ module "app_connector" {
 }
 ```
 
-### Existing Resource Group
+### Existing VNet (Deploy Alongside a vSocket)
 
-Deploy into a pre-existing resource group by providing `resource_group_name`. When set, the module skips resource group creation.
+Deploy the app connector into an existing vSocket VNet by providing `vnet_name` and `resource_group_name`. The module creates new mgmt and WAN subnets inside that VNet but skips VNet creation. This is the typical pattern when deploying alongside a `catonetworks/vsocket-azure-vnet/cato` module.
 
 ```hcl
-resource "azurerm_resource_group" "existing" {
-  name     = "my-existing-rg"
-  location = "eastus"
+module "vsocket" {
+  source = "catonetworks/vsocket-azure-vnet/cato"
+  # ... vSocket configuration ...
+}
+
+locals {
+  vnet_name = element(
+    split("/", module.vsocket.azurerm_virtual_network_id),
+    length(split("/", module.vsocket.azurerm_virtual_network_id)) - 1
+  )
 }
 
 module "app_connector" {
   source = "catonetworks/appconnector-azure/cato"
 
-  location            = azurerm_resource_group.existing.location
-  resource_group_name = azurerm_resource_group.existing.name
+  location            = "eastus"
+  prefix              = "my-appconn"
+  resource_group_name = module.vsocket.resource_group_name
+  vnet_name           = local.vnet_name
+
+  mgmt_subnet_cidr = "10.52.10.0/24"
+  wan_subnet_cidr  = "10.52.11.0/24"
+  lan_subnet_cidr  = "10.52.12.0/24"
+
+  accept_marketplace_terms = false
+
+  app_connector_name        = "appconn-eastus"
+  app_connector_group       = "azure-apps"
+  app_connector_primary_pop = "New York"
+}
+```
+
+### Existing LAN Subnet (Share Network with Private Apps)
+
+Place the app connector's LAN NIC on an existing subnet where private applications are running. This gives the app connector direct L2 adjacency to the apps it needs to reach, which is required for the private apps to show as "Available" in the Cato Management Application.
+
+Use `lan_subnet_id` to pass the subnet ID. When set, the module skips LAN subnet creation and NSG association (the existing subnet keeps its own NSG).
+
+```hcl
+# Subnet where the private application VMs live
+resource "azurerm_subnet" "app_network" {
+  name                 = "app-network"
+  resource_group_name  = module.vsocket.resource_group_name
+  virtual_network_name = local.vnet_name
+  address_prefixes     = ["10.52.25.0/24"]
+}
+
+module "app_connector" {
+  source = "catonetworks/appconnector-azure/cato"
+
+  location            = "eastus"
+  prefix              = "my-appconn"
+  resource_group_name = module.vsocket.resource_group_name
+  vnet_name           = local.vnet_name
+
+  mgmt_subnet_cidr = "10.52.10.0/24"
+  wan_subnet_cidr  = "10.52.11.0/24"
+  lan_subnet_id    = azurerm_subnet.app_network.id
+
+  accept_marketplace_terms = false
+
+  app_connector_name        = "appconn-eastus"
+  app_connector_group       = "azure-apps"
+  app_connector_primary_pop = "New York"
+}
+```
+
+### Existing Resource Group
+
+Deploy into a pre-existing resource group by providing `resource_group_name`. When set, the module skips resource group creation.
+
+```hcl
+module "app_connector" {
+  source = "catonetworks/appconnector-azure/cato"
+
+  location            = "eastus"
+  resource_group_name = "my-existing-rg"
   prefix              = "shared-appconn"
 
   app_connector_name        = "appconn-shared"
@@ -196,10 +279,11 @@ This module creates the following Azure resources:
 | Resource | Description |
 |----------|-------------|
 | `azurerm_resource_group` | Resource group (conditional — skipped when `resource_group_name` is provided) |
-| `azurerm_virtual_network` | VNet with configurable address space |
-| `azurerm_subnet` (x3) | Management, WAN, and LAN subnets |
+| `azurerm_virtual_network` | VNet (conditional — skipped when `vnet_name` is provided) |
+| `azurerm_subnet` (mgmt, wan) | Management and WAN subnets (always created) |
+| `azurerm_subnet` (lan) | LAN subnet (conditional — skipped when `lan_subnet_id` is provided) |
 | `azurerm_network_security_group` | NSG with optional SSH and custom rules |
-| `azurerm_subnet_network_security_group_association` (x3) | NSG associations for each subnet |
+| `azurerm_subnet_network_security_group_association` | NSG associations for mgmt, wan, and lan (lan skipped when using existing subnet) |
 | `azurerm_public_ip` | Static public IP for WAN egress |
 | `azurerm_network_interface` (x3) | Management, WAN (with public IP), and LAN (with IP forwarding) NICs |
 | `azurerm_marketplace_agreement` | Marketplace terms acceptance (conditional) |
@@ -214,10 +298,12 @@ This module creates the following Azure resources:
 | `location` | Azure region for all resources | `string` | — | yes |
 | `prefix` | Name prefix applied to all created resources | `string` | `"cato-appconn"` | no |
 | `resource_group_name` | Existing resource group name. Null = create new | `string` | `null` | no |
-| `vnet_cidr` | Address space for the VNet | `string` | `"10.20.0.0/16"` | no |
+| `vnet_name` | Existing VNet name. Null = create new | `string` | `null` | no |
+| `vnet_cidr` | Address space for the VNet (only when creating new) | `string` | `"10.20.0.0/16"` | no |
 | `mgmt_subnet_cidr` | CIDR for the management subnet | `string` | `"10.20.0.0/24"` | no |
 | `wan_subnet_cidr` | CIDR for the WAN subnet | `string` | `"10.20.1.0/24"` | no |
-| `lan_subnet_cidr` | CIDR for the LAN subnet | `string` | `"10.20.2.0/24"` | no |
+| `lan_subnet_cidr` | CIDR for the LAN subnet (only when `lan_subnet_id` is null) | `string` | `"10.20.2.0/24"` | no |
+| `lan_subnet_id` | Existing subnet ID for the LAN NIC. Null = create new | `string` | `null` | no |
 | `ssh_allowed_cidr` | Source CIDR for SSH access to mgmt NIC. Null = disabled | `string` | `null` | no |
 | `sg_rules` | Additional NSG security rules | `list(object)` | `[]` | no |
 | `app_connector_name` | Name of the App Connector | `string` | `"app-connector"` | no |
@@ -230,8 +316,8 @@ This module creates the following Azure resources:
 | `disk_size_gb` | OS disk size in GB | `number` | `8` | no |
 | `storage_account_type` | Storage account type for OS disk | `string` | `"Standard_LRS"` | no |
 | `image_publisher` | Marketplace image publisher | `string` | `"catonetworks"` | no |
-| `image_offer` | Marketplace image offer | `string` | `"cato_app_connector"` | no |
-| `image_sku` | Marketplace image SKU | `string` | `"public-cato-app-connector"` | no |
+| `image_offer` | Marketplace image offer | `string` | `"catoappconnector"` | no |
+| `image_sku` | Marketplace image SKU | `string` | `"appconnector"` | no |
 | `image_version` | Marketplace image version | `string` | `"23.0.19605"` | no |
 | `accept_marketplace_terms` | Accept Cato marketplace terms. Set false if already accepted | `bool` | `true` | no |
 | `site_location` | Override automatic site location (city_name, country_code, state_code, timezone) | `object` | All null (auto-detect) | no |
@@ -242,7 +328,7 @@ This module creates the following Azure resources:
 | Name | Description |
 |------|-------------|
 | `resource_group_name` | Resource group containing the App Connector |
-| `azurerm_virtual_network_id` | ID of the virtual network |
+| `azurerm_virtual_network_id` | ID of the virtual network (null when using existing VNet) |
 | `wan_public_ip` | Public IP address assigned to the WAN interface |
 | `wan_public_ip_id` | ID of the WAN public IP resource |
 | `mgmt_nic_id` | ID of the management NIC |
@@ -250,7 +336,7 @@ This module creates the following Azure resources:
 | `lan_nic_id` | ID of the LAN NIC |
 | `mgmt_subnet_id` | ID of the management subnet |
 | `wan_subnet_id` | ID of the WAN subnet |
-| `lan_subnet_id` | ID of the LAN subnet |
+| `lan_subnet_id` | ID of the LAN subnet (created or existing) |
 | `nsg_id` | ID of the network security group |
 | `cato_appconnector_id` | ID of the App Connector in Cato |
 | `cato_appconnector_name` | Name of the App Connector in Cato |

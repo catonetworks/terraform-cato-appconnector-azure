@@ -25,8 +25,14 @@ variable "tags" {
 
 ## Networking Variables
 
+variable "vnet_name" {
+  description = "Name of an existing VNet to deploy into. If null, a new VNet is created."
+  type        = string
+  default     = null
+}
+
 variable "vnet_cidr" {
-  description = "Address space for the VNet created by this module."
+  description = "Address space for the VNet. Only used when creating a new VNet (vnet_name is null)."
   type        = string
   default     = "10.20.0.0/16"
 }
@@ -44,9 +50,15 @@ variable "wan_subnet_cidr" {
 }
 
 variable "lan_subnet_cidr" {
-  description = "CIDR for the LAN subnet (faces the protected application network)."
+  description = "CIDR for the LAN subnet (faces the protected application network). Only used when lan_subnet_id is null."
   type        = string
   default     = "10.20.2.0/24"
+}
+
+variable "lan_subnet_id" {
+  description = "ID of an existing subnet for the LAN NIC. If null, a new LAN subnet is created using lan_subnet_cidr."
+  type        = string
+  default     = null
 }
 
 variable "ssh_allowed_cidr" {
