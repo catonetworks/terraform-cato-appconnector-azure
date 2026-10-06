@@ -407,6 +407,7 @@ No modules.
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
 | <a name="input_accept_marketplace_terms"></a> [accept\_marketplace\_terms](#input\_accept\_marketplace\_terms) | Whether Terraform should accept the Cato marketplace image terms. Set to false if the terms are already accepted on this subscription. | `bool` | `true` | no |
+| <a name="input_app_connector_bw_allocation"></a> [app\_connector\_bw\_allocation](#input\_app\_connector\_bw\_allocation) | Pooled bandwidth license allocations | <pre>list(object({<br/>    license_id = string<br/>    bandwidth  = number<br/>  }))</pre> | `null` | no |
 | <a name="input_app_connector_description"></a> [app\_connector\_description](#input\_app\_connector\_description) | AppConnector description | `string` | `null` | no |
 | <a name="input_app_connector_disk_name"></a> [app\_connector\_disk\_name](#input\_app\_connector\_disk\_name) | Cato App Connector Disk name | `string` | `"Cato-app-connector-disk"` | no |
 | <a name="input_app_connector_group"></a> [app\_connector\_group](#input\_app\_connector\_group) | AppConnector group name | `string` | n/a | yes |
@@ -416,11 +417,12 @@ No modules.
 | <a name="input_app_connector_vm_name"></a> [app\_connector\_vm\_name](#input\_app\_connector\_vm\_name) | Azure Cato App Connector name | `string` | `"Cato-app-connector"` | no |
 | <a name="input_commands"></a> [commands](#input\_commands) | n/a | `list(string)` | <pre>[<br/>  "nohup /cato/socket/run_socket_daemon.sh &"<br/>]</pre> | no |
 | <a name="input_disk_size_gb"></a> [disk\_size\_gb](#input\_disk\_size\_gb) | Disk size in GB | `number` | `8` | no |
-| <a name="input_image_offer"></a> [image\_offer](#input\_image\_offer) | Specifies the offer of the image used to create the virtual machines. Changing this forces a new resource to be created. | `string` | `"cato_app_connector"` | no |
+| <a name="input_image_offer"></a> [image\_offer](#input\_image\_offer) | Specifies the offer of the image used to create the virtual machines. Changing this forces a new resource to be created. | `string` | `"catoappconnector"` | no |
 | <a name="input_image_publisher"></a> [image\_publisher](#input\_image\_publisher) | Specifies the publisher of the image used to create the virtual machines. Changing this forces a new resource to be created. | `string` | `"catonetworks"` | no |
-| <a name="input_image_sku"></a> [image\_sku](#input\_image\_sku) | Specifies the SKU of the image used to create the virtual machines. Changing this forces a new resource to be created. | `string` | `"public-cato-app-connector"` | no |
+| <a name="input_image_sku"></a> [image\_sku](#input\_image\_sku) | Specifies the SKU of the image used to create the virtual machines. Changing this forces a new resource to be created. | `string` | `"appconnector"` | no |
 | <a name="input_image_version"></a> [image\_version](#input\_image\_version) | Specifies the version of the image used to create the virtual machines. Changing this forces a new resource to be created. | `string` | `"23.0.19605"` | no |
-| <a name="input_lan_subnet_cidr"></a> [lan\_subnet\_cidr](#input\_lan\_subnet\_cidr) | CIDR for the LAN subnet (faces the protected application network). | `string` | `"10.20.2.0/24"` | no |
+| <a name="input_lan_subnet_cidr"></a> [lan\_subnet\_cidr](#input\_lan\_subnet\_cidr) | CIDR for the LAN subnet (faces the protected application network). Only used when lan\_subnet\_id is null. | `string` | `"10.20.2.0/24"` | no |
+| <a name="input_lan_subnet_id"></a> [lan\_subnet\_id](#input\_lan\_subnet\_id) | ID of an existing subnet for the LAN NIC. If null, a new LAN subnet is created using lan\_subnet\_cidr. | `string` | `null` | no |
 | <a name="input_location"></a> [location](#input\_location) | (Required) The Azure Region where the Resource Group should exist. Changing this forces a new Resource Group to be created. | `string` | n/a | yes |
 | <a name="input_mgmt_subnet_cidr"></a> [mgmt\_subnet\_cidr](#input\_mgmt\_subnet\_cidr) | CIDR for the management subnet. | `string` | `"10.20.0.0/24"` | no |
 | <a name="input_prefix"></a> [prefix](#input\_prefix) | Name prefix applied to all created resources. | `string` | `"cato-appconn"` | no |
@@ -431,7 +433,8 @@ No modules.
 | <a name="input_storage_account_type"></a> [storage\_account\_type](#input\_storage\_account\_type) | Storage account type | `string` | `"Standard_LRS"` | no |
 | <a name="input_tags"></a> [tags](#input\_tags) | A Map of Keys and Values to Describe the infrastructure | `map(any)` | `null` | no |
 | <a name="input_vm_size"></a> [vm\_size](#input\_vm\_size) | (Required) Specifies the size of the Virtual Machine. See also Azure VM Naming Conventions. https://learn.microsoft.com/en-us/azure/virtual-machines/vm-naming-conventions | `string` | `"Standard_D8ls_v5"` | no |
-| <a name="input_vnet_cidr"></a> [vnet\_cidr](#input\_vnet\_cidr) | Address space for the VNet created by this module. | `string` | `"10.20.0.0/16"` | no |
+| <a name="input_vnet_cidr"></a> [vnet\_cidr](#input\_vnet\_cidr) | Address space for the VNet. Only used when creating a new VNet (vnet\_name is null). | `string` | `"10.20.0.0/16"` | no |
+| <a name="input_vnet_name"></a> [vnet\_name](#input\_vnet\_name) | Name of an existing VNet to deploy into. If null, a new VNet is created. | `string` | `null` | no |
 | <a name="input_wan_subnet_cidr"></a> [wan\_subnet\_cidr](#input\_wan\_subnet\_cidr) | CIDR for the WAN subnet (egress to Cato PoP). | `string` | `"10.20.1.0/24"` | no |
 
 ## Outputs
