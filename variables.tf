@@ -208,3 +208,12 @@ variable "site_location" {
     timezone     = null
   }
 }
+
+variable "app_connector_bw_allocation" {
+  description = "Pooled bandwidth license allocations"
+  type = list(object({
+    license_id = string
+    bandwidth  = number
+  }))
+  default = null
+}
